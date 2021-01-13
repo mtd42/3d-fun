@@ -1,0 +1,12 @@
+version: "3.7"
+
+services:
+  3d-app:
+    container_name: 3d-app
+    build: .
+    ports:
+      - "3000:3000"
+
+# networks:
+#   docknet:
+#     external: true
