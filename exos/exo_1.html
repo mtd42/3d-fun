@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset=utf-8>
+    <title>three.js app</title>
+    <style>
+      body {
+        margin: 0;
+        overflow: hidden;
+      }
+    </style>
+  </head>
+  <body>
+      <fieldset>
+          <legend>Position</legend>
+          <input type="range" id="posx" min="-5.0" min="-5.0" step="0.1" value=".0" oninput="update(value, id)">
+          <legend>rotation</legend>
+          <input type="range" id="rotx" min="-5.0" min="-5.0" step="0.1" value=".0" oninput="update(value, id)">
+      </fieldset>
+      <!-- <fieldset>
+
+    </fieldset> -->
+    <script src="https://threejs.org/build/three.min.js"></script>
+    <script>
+      // création du renderer
+      var renderer = new THREE.WebGLRenderer();
+      document.body.appendChild(renderer.domElement);
+      renderer.setSize(window.innerWidth, window.innerHeight);
+
+      // création de la caméra
+      var camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.5, 1000);
+
+      // création de la scène
+      var scene = new THREE.Scene();
+
+      // couleur de fond noire
+      scene.background = new THREE.Color(0, 0, 0);
+
+      var geometry = new THREE.BoxGeometry(1, 1, 1)
+      var material = new THREE.MeshNormalMaterial();
+      var cube = new THREE.Mesh(geometry, material)
+      scene.add(cube)
+      camera.position.z = 5
+
+      function update(value, operation) {
+          var value = parseFloat(value)
+          if (operation === "posx") {
+              cube.position.x = value;
+              console.log(cube.position.x)
+          } else if (operation === "rotx") {
+              cube.rotation.x = THREE.Math.degToRad(value)
+              console.log(cube.rotation.x)
+          }
+          // cube.position.x = value;
+          renderer.render(scene, camera);
+      }
+
+      renderer.render(scene, camera);
+    </script>
+  </body>
+</html>

@@ -1,0 +1,121 @@
+<script src="https://threejs.org/build/three.min.js"></script>
+<script>
+
+
+
+    // création du renderer
+    const renderer = new THREE.WebGLRenderer();
+    document.body.appendChild(renderer.domElement);
+    renderer.setSize(window.innerWidth, window.innerHeight);
+
+    // Ombres
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+    // création de la caméra
+    const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.5, 1000);
+
+    // création de la scène
+    const scene = new THREE.Scene();
+
+    // couleur de fond noire
+    scene.background = new THREE.Color(0, 0, 0);
+
+    // création du groupe
+    const group = new THREE.Group();
+    scene.add(group);
+
+
+    // test audio
+    const listener = new THREE.AudioListener();
+    camera.add( listener );
+
+    // create a global audio source
+    const sound = new THREE.Audio( listener );
+
+    // load a sound and set it as the Audio object's buffer
+    const audioLoader = new THREE.AudioLoader();
+    audioLoader.load( 'images/audio.mp3', function( buffer ) {
+        sound.setBuffer( buffer );
+        sound.setLoop( true );
+        sound.setVolume( 0.5 );
+        sound.play();
+    });
+
+
+    // --------------------------------------------------------------------------- Lumière
+    const light = new THREE.DirectionalLight( 0xaaafff, 1, 100 );
+    light.position.set( -2, 1, 1 ); 
+    light.castShadow = true;
+    scene.add( light );
+
+    light.shadow.mapSize.width = 512;
+    light.shadow.mapSize.height = 512;
+    light.shadow.camera.near = 0.5;
+    light.shadow.camera.far = 500;
+
+    // ------------------------------------------------------------------------- texture sphere 1
+    const texture1 = new THREE.TextureLoader().load('images/earth_color.jpg');
+    const texture1Normal = new THREE.TextureLoader().load('images/earth_normal.jpg');
+
+    // sphere 1
+    const geometry1 = new THREE.SphereGeometry(20, 32, 32);
+    const material1 = new THREE.MeshPhongMaterial({
+        map: texture1,
+        normalMap: texture1Normal,
+        // bumpMap: texture1Normal,
+        // needsUpdate: true,
+    });
+    const sphere1 = new THREE.Mesh(geometry1, material1);
+    // sphere1.add(new THREE.AxesHelper(7))
+    material1.needsUpdate = true;
+    sphere1.position.x = 0;
+    group.add(sphere1);
+
+    // ------------------------------------------------------------------------- texture sphere 2
+    const texture2 = new THREE.TextureLoader().load('images/moon_color.jpg');
+    const texture2Normal = new THREE.TextureLoader().load('images/moon_normal.jpg');
+    // sphere 2
+    const geometry2 = new THREE.SphereGeometry(3.277, 32, 32);
+    const material2 = new THREE.MeshPhongMaterial({
+        // map: texture2,
+        normalMap: texture2Normal,
+        // bumpMap: texture2Normal
+        // needsUpdate: true,
+    });
+
+    const sphere2 = new THREE.Mesh(geometry2, material2);
+    // sphere2.add(new THREE.AxesHelper(1.3))
+    sphere2.position.x = 35;
+    sphere2.position.y = 10;
+    material2.needsUpdate = true;
+    group.add(sphere2);
+
+    // --------------------------------------------------------------------------- texture sphere 3
+    const texture3 = new THREE.TextureLoader().load('images/earth_cloud.jpg');
+    // sphere 1
+    const geometry3 = new THREE.SphereGeometry(20, 32, 32);
+    const material3 = new THREE.MeshLambertMaterial({
+        alphaMap: texture3,
+        transparent: true,
+        // needsUpdate: true,
+    });
+    const sphere3 = new THREE.Mesh(geometry3, material3);
+    // sphere1.add(new THREE.AxesHelper(7))
+    
+    sphere3.position.x = 0;
+    group.add(sphere3);
+
+    camera.position.z = 100;
+
+    const animate = () => {
+        sphere1.rotateY(Math.sqrt(0.00000001));
+        sphere2.rotateY(-0.00000001);
+        sphere3.rotateY(Math.sqrt(0.00000001));
+        group.rotateY(0.002);
+        requestAnimationFrame(animate);
+        renderer.render(scene, camera);
+    }
+
+    animate();
+</script>

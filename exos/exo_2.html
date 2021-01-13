@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset=utf-8>
+    <title>three.js app</title>
+    <style>
+      body {
+        margin: 0;
+        overflow: hidden;
+      }
+    </style>
+  </head>
+  <body>
+    <script src="https://threejs.org/build/three.min.js"></script>
+    <script>
+      // création du renderer
+      var renderer = new THREE.WebGLRenderer();
+      document.body.appendChild(renderer.domElement);
+      renderer.setSize(window.innerWidth, window.innerHeight);
+
+      // création de la caméra
+      var camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.5, 1000);
+
+      // création de la scène
+      var scene = new THREE.Scene();
+
+      // couleur de fond noire
+      scene.background = new THREE.Color(0, 0, 0);
+
+      // création du groupe
+      var group = new THREE.Group();
+      scene.add(group);
+
+      // création du premier cube et ajout dans le groupe
+      var cube1 = new THREE.Mesh(new THREE.BoxGeometry());
+      cube1.position.x = 2;
+      group.add(cube1);
+
+      // création du second cube et ajout dans le groupe
+      var cube2 = new THREE.Mesh(new THREE.BoxGeometry());
+      cube2.position.x = -2;
+      group.add(cube2);
+
+      // positionnement de la caméra
+      camera.position.z = 10;
+
+      function animate() {
+        cube1.rotateX(.005);
+        cube2.rotateX(.005);
+        group.rotateZ(.01);
+        requestAnimationFrame(animate);
+        renderer.render(scene, camera);
+      }
+
+      animate();
+
+    </script>
+  </body>
+</html>
