@@ -1,7 +1,11 @@
+<div id="btnZoom">
+<button class="zoom" onclick="zoom(1)">+</button>
+<button class="zoom" onclick="zoom(2)">-</button>
+</div>
+
+
 <script src="https://threejs.org/build/three.min.js"></script>
 <script>
-
-
 
     // création du renderer
     const renderer = new THREE.WebGLRenderer();
@@ -27,20 +31,20 @@
 
 
     // test audio
-    const listener = new THREE.AudioListener();
-    camera.add( listener );
-
-    // create a global audio source
-    const sound = new THREE.Audio( listener );
-
-    // load a sound and set it as the Audio object's buffer
-    const audioLoader = new THREE.AudioLoader();
-    audioLoader.load( 'images/audio.mp3', function( buffer ) {
-        sound.setBuffer( buffer );
-        sound.setLoop( true );
-        sound.setVolume( 0.5 );
-        sound.play();
-    });
+    // const listener = new THREE.AudioListener();
+    // camera.add( listener );
+// 
+    // // create a global audio source
+    // const sound = new THREE.Audio( listener );
+// 
+    // // load a sound and set it as the Audio object's buffer
+    // const audioLoader = new THREE.AudioLoader();
+    // audioLoader.load( 'images/audio.mp3', function( buffer ) {
+    //     sound.setBuffer( buffer );
+    //     sound.setLoop( true );
+    //     sound.setVolume( 0.5 );
+    //     sound.play();
+    // });
 
 
     // --------------------------------------------------------------------------- Lumière
@@ -54,68 +58,367 @@
     light.shadow.camera.near = 0.5;
     light.shadow.camera.far = 500;
 
-    // ------------------------------------------------------------------------- texture sphere 1
-    const texture1 = new THREE.TextureLoader().load('images/earth_color.jpg');
-    const texture1Normal = new THREE.TextureLoader().load('images/earth_normal.jpg');
+    function zoom(lvlZoom) {
+        switch (lvlZoom) {
+            case 1:
+                camera.position.z -= 20;
+                break;
+            case 2:
+                camera.position.z += 20;
+                break;
+            default:
+                break;
+        }
+    }
 
-    // sphere 1
-    const geometry1 = new THREE.SphereGeometry(20, 32, 32);
-    const material1 = new THREE.MeshPhongMaterial({
-        map: texture1,
-        normalMap: texture1Normal,
-        // bumpMap: texture1Normal,
-        // needsUpdate: true,
-    });
-    const sphere1 = new THREE.Mesh(geometry1, material1);
-    // sphere1.add(new THREE.AxesHelper(7))
-    material1.needsUpdate = true;
-    sphere1.position.x = 0;
-    group.add(sphere1);
+    function generateAstre(data) {
+        const texture = new THREE.TextureLoader().load(data.assets.map);
+        const textureNormal = new THREE.TextureLoader().load(data.assets.normalMap);
 
-    // ------------------------------------------------------------------------- texture sphere 2
-    const texture2 = new THREE.TextureLoader().load('images/moon_color.jpg');
-    const texture2Normal = new THREE.TextureLoader().load('images/moon_normal.jpg');
-    // sphere 2
-    const geometry2 = new THREE.SphereGeometry(3.277, 32, 32);
-    const material2 = new THREE.MeshPhongMaterial({
-        // map: texture2,
-        normalMap: texture2Normal,
-        // bumpMap: texture2Normal
-        // needsUpdate: true,
-    });
+        const materialData = {
+            map: texture,
+            // normalMap: textureNormal,
+            // bumpMap: '',
+        }
 
-    const sphere2 = new THREE.Mesh(geometry2, material2);
-    // sphere2.add(new THREE.AxesHelper(1.3))
-    sphere2.position.x = 35;
-    sphere2.position.y = 10;
-    material2.needsUpdate = true;
-    group.add(sphere2);
+        const geometry = new THREE.SphereGeometry(data.size.radius, 32, 32);
+        const material = new THREE.MeshBasicMaterial(materialData);
+        const sphere = new THREE.Mesh(geometry, material);
 
-    // --------------------------------------------------------------------------- texture sphere 3
-    const texture3 = new THREE.TextureLoader().load('images/earth_cloud.jpg');
-    // sphere 1
-    const geometry3 = new THREE.SphereGeometry(20, 32, 32);
-    const material3 = new THREE.MeshLambertMaterial({
-        alphaMap: texture3,
-        transparent: true,
-        // needsUpdate: true,
-    });
-    const sphere3 = new THREE.Mesh(geometry3, material3);
-    // sphere1.add(new THREE.AxesHelper(7))
-    
-    sphere3.position.x = 0;
-    group.add(sphere3);
+        material.needsUpdate = true;
+        sphere.position.x = data.position.x;
+        sphere.position.y = data.position.y;
+        return sphere;
+    }
 
-    camera.position.z = 100;
+    function generateEllipse(data) {
+        const curve = new THREE.EllipseCurve(
+            data.ellipse.ax,  data.ellipse.ay, // ax, aY
+            data.ellipse.xRadius, data.ellipse.yRadius, // xRadius, yRadius
+            data.ellipse.aStartAngle, data.ellipse.aEndAngle, // aStartAngle, aEndAngle
+            data.ellipse.aClockwise, // aClockwise
+            data.ellipse.aRotation, // aRotation
+        );
 
-    const animate = () => {
-        sphere1.rotateY(Math.sqrt(0.00000001));
-        sphere2.rotateY(-0.00000001);
-        sphere3.rotateY(Math.sqrt(0.00000001));
-        group.rotateY(0.002);
+        const points = curve.getPoints( 50 );
+        const geometry = new THREE.BufferGeometry().setFromPoints( points );
+
+        const material = new THREE.LineBasicMaterial( { color : 0x141414 } );
+
+        // Create the final object to add to the scene
+        const ellipse = new THREE.Line( geometry, material );
+        return { ellipse, curve }
+    }
+
+    // ------------------------------------------------------------------------- texture SOLEIL
+
+    const data_soleil = {
+        assets: {
+            map: 'images/sun_color.jpg',
+        },
+        position: {
+            x: 0,
+            y: 0,
+        },
+        size: {
+            radius: 4,
+        }
+    }
+    const soleil = generateAstre(data_soleil);
+    scene.add(soleil);
+
+    // ------------------------------------------------------------------------- texture MERCURE
+
+    const data_mercure = {
+        assets: {
+            map: 'images/moon_color.jpg',
+            normalMap : 'images/moon_normal.jpg'
+        },
+        position: {
+            x: -10,
+            y: 0,
+        },
+        size: {
+            radius: 0.50,
+        },
+        ellipse: {
+            ax: 0,
+            ay: 0,
+            xRadius: 10,
+            yRadius: 10,
+            aStartAngle: 0,
+            aEndAngle: 2 * Math.PI,
+            aClockwise: false,
+            aRotation: 0,
+        }
+    }
+    const mercure = generateAstre(data_mercure);
+    const {ellipse: ellipse_mercure, curve: curve_mercure} = generateEllipse(data_mercure);
+    scene.add(ellipse_mercure);
+    group.add(mercure);
+
+    // --------------------------------------------------------------------------- texture VENUS
+    const data_venus = {
+        assets: {
+            map: 'images/moon_color.jpg',
+            normalMap : 'images/moon_normal.jpg'
+        },
+        position: {
+            x: -20,
+            y: -10,
+        },
+        size: {
+            radius: 1,
+        },
+        ellipse: {
+            ax: 0,
+            ay: 0,
+            xRadius: 20,
+            yRadius: 20,
+            aStartAngle: 0,
+            aEndAngle: 2 * Math.PI,
+            aClockwise: false,
+            aRotation: 0,
+        }
+    }
+    const venus = generateAstre(data_venus);
+    const {ellipse: ellipse_venus, curve: curve_venus} = generateEllipse(data_venus);
+    scene.add(ellipse_venus);
+    group.add(venus);
+
+    // --------------------------------------------------------------------------- texture TERRE
+        const data_terre = {
+        assets: {
+            map: 'images/earth_color.jpg',
+            normalMap : 'images/earth_normal.jpg'
+        },
+        position: {
+            x: 0,
+            y: 0,
+        },
+        size: {
+            radius: 1.50,
+        },
+        ellipse: {
+            ax: 0,
+            ay: 0,
+            xRadius: 40,
+            yRadius: 40,
+            aStartAngle: 0,
+            aEndAngle: 2 * Math.PI,
+            aClockwise: false,
+            aRotation: 0,
+        }
+    }
+    const terre = generateAstre(data_terre);
+    const {ellipse: ellipse_terre, curve: curve_terre} = generateEllipse(data_terre);
+    scene.add(ellipse_terre);
+    group.add(terre);
+
+    // --------------------------------------------------------------------------- texture MARS
+    const data_mars = {
+        assets: {
+            map: 'images/moon_color.jpg',
+            normalMap : 'images/moon_normal.jpg'
+        },
+        position: {
+            x: 0,
+            y: 0,
+        },
+        size: {
+            radius: 0.75,
+        },
+        ellipse: {
+            ax: 0,
+            ay: 0,
+            xRadius: 60,
+            yRadius: 60,
+            aStartAngle: 0,
+            aEndAngle: 2 * Math.PI,
+            aClockwise: false,
+            aRotation: 0,
+        }
+    }
+    const mars = generateAstre(data_mars);
+    const {ellipse: ellipse_mars, curve: curve_mars} = generateEllipse(data_mars);
+    scene.add(ellipse_mars);
+    group.add(mars);
+
+    // --------------------------------------------------------------------------- texture JUPITER
+    const data_jupiter = {
+        assets: {
+            map: 'images/moon_color.jpg',
+            normalMap : 'images/moon_normal.jpg'
+        },
+        position: {
+            x: 0,
+            y: 0,
+        },
+        size: {
+            radius: 2.25,
+        },
+        ellipse: {
+            ax: 0,
+            ay: 0,
+            xRadius: 80,
+            yRadius: 80,
+            aStartAngle: 0,
+            aEndAngle: 2 * Math.PI,
+            aClockwise: false,
+            aRotation: 0,
+        }
+    }
+    const jupiter = generateAstre(data_jupiter);
+    const {ellipse: ellipse_jupiter, curve: curve_jupiter} = generateEllipse(data_jupiter);
+    scene.add(ellipse_jupiter);
+    group.add(jupiter);
+
+    // --------------------------------------------------------------------------- texture SATURNE
+        const data_saturne = {
+        assets: {
+            map: 'images/moon_color.jpg',
+            normalMap : 'images/moon_normal.jpg'
+        },
+        position: {
+            x: 0,
+            y: 0,
+        },
+        size: {
+            radius: 2,
+        },
+        ellipse: {
+            ax: 0,
+            ay: 0,
+            xRadius: 100,
+            yRadius: 100,
+            aStartAngle: 0,
+            aEndAngle: 2 * Math.PI,
+            aClockwise: false,
+            aRotation: 0,
+        }
+    }
+    const saturne = generateAstre(data_saturne);
+    const {ellipse: ellipse_saturne, curve: curve_saturne} = generateEllipse(data_saturne);
+    scene.add(ellipse_saturne);
+    group.add(saturne);
+
+    // --------------------------------------------------------------------------- texture URANUS
+    const data_uranus = {
+        assets: {
+            map: 'images/moon_color.jpg',
+            normalMap : 'images/moon_normal.jpg'
+        },
+        position: {
+            x: 0,
+            y: 0,
+        },
+        size: {
+            radius: 1.75,
+        },
+        ellipse: {
+            ax: 0,
+            ay: 0,
+            xRadius: 120,
+            yRadius: 120,
+            aStartAngle: 0,
+            aEndAngle: 2 * Math.PI,
+            aClockwise: false,
+            aRotation: 0,
+        }
+    }
+    const uranus = generateAstre(data_uranus);
+    const {ellipse: ellipse_uranus, curve: curve_uranus} = generateEllipse(data_uranus);
+    scene.add(ellipse_uranus);
+    group.add(uranus);
+
+    // --------------------------------------------------------------------------- texture NEPTUNE
+    const data_neptune = {
+        assets: {
+            map: 'images/moon_color.jpg',
+            normalMap : 'images/moon_normal.jpg'
+        },
+        position: {
+            x: 0,
+            y: 0,
+        },
+        size: {
+            radius: 1.50,
+        },
+        ellipse: {
+            ax: 0,
+            ay: 0,
+            xRadius: 140,
+            yRadius: 140,
+            aStartAngle: 0,
+            aEndAngle: 2 * Math.PI,
+            aClockwise: false,
+            aRotation: 0,
+        }
+    }
+    const neptune = generateAstre(data_neptune);
+    const {ellipse: ellipse_neptune, curve: curve_neptune} = generateEllipse(data_neptune);
+    scene.add(ellipse_neptune);
+    group.add(neptune);
+
+    // --------------------------------------------------------------------------- texture PLUTON
+    const data_pluton = {
+        assets: {
+            map: 'images/sun_color.jpg',
+            normalMap : 'images/moon_normal.jpg'
+        },
+        position: {
+            x: 70,
+            y: -80,
+        },
+        size: {
+            radius: 0.50,
+        },
+        ellipse: {
+            ax: 0,
+            ay: 0,
+            xRadius: 160,
+            yRadius: 160,
+            aStartAngle: 0,
+            aEndAngle: 2 * Math.PI,
+            aClockwise: false,
+            aRotation: 0,
+        }
+    }
+    const pluton = generateAstre(data_pluton);
+    const {ellipse: ellipse_pluton, curve: curve_pluton} = generateEllipse(data_pluton);
+    scene.add(ellipse_pluton);
+    group.add(pluton);
+
+    camera.position.z = 500;
+
+    const vitesse = 10.618;
+
+    let start = null;
+    const animate = (t) => {
+        if (start === null) {
+          start = t;
+        }
+        const delai = t - start;
+        
+        curve_mercure.getPoint((delai * vitesse * .0000089) % 1, mercure.position);
+        curve_venus.getPoint((delai * vitesse *   .0000079) % 1, venus.position);
+        curve_terre.getPoint((delai * vitesse *   .0000069) % 1, terre.position);
+        curve_mars.getPoint((delai * vitesse *    .0000059) % 1, mars.position);
+        curve_jupiter.getPoint((delai * vitesse * .0000049) % 1, jupiter.position);
+        curve_saturne.getPoint((delai * vitesse * .0000039) % 1, saturne.position);
+        curve_uranus.getPoint((delai * vitesse *  .0000029) % 1, uranus.position);
+        curve_neptune.getPoint((delai * vitesse * .0000019) % 1, neptune.position);
+        curve_pluton.getPoint((delai * vitesse *  .0000009) % 1, pluton.position);
+
+        // soleil.rotateY(Math.sqrt(0.000001));
+        // terre.rotateZ(.001);
+        // moon.rotateY(-0.00000001);
+        // sphere3.rotateY(Math.sqrt(0.00000001));
+        group.rotateZ(0.002);
+
         requestAnimationFrame(animate);
         renderer.render(scene, camera);
     }
+    requestAnimationFrame(animate);
 
-    animate();
 </script>
