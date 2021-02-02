@@ -1,10 +1,5 @@
-<div id="btnZoom">
-<button class="zoom" onclick="zoom(1)">+</button>
-<button class="zoom" onclick="zoom(2)">-</button>
-</div>
-
-
 <script src="https://threejs.org/build/three.min.js"></script>
+<script src="/javascripts/OrbitControls.js"></script>
 <script>
 
     // création du renderer
@@ -29,7 +24,7 @@
     const group = new THREE.Group();
     scene.add(group);
 
-
+    // --------------------------------------------------------------------------- Paramétrage Audio
     // test audio
     // const listener = new THREE.AudioListener();
     // camera.add( listener );
@@ -47,9 +42,9 @@
     // });
 
 
-    // --------------------------------------------------------------------------- Lumière
-    const light = new THREE.DirectionalLight( 0xaaafff, 1, 100 );
-    light.position.set( -2, 1, 1 ); 
+    // --------------------------------------------------------------------------- Paramétrage Lumière
+    const light = new THREE.DirectionalLight( 0xaaafff, 2.5, 100 );
+    light.position.set( 0, 0, 1 ); 
     light.castShadow = true;
     scene.add( light );
 
@@ -58,23 +53,16 @@
     light.shadow.camera.near = 0.5;
     light.shadow.camera.far = 500;
 
-    function zoom(lvlZoom) {
-        switch (lvlZoom) {
-            case 1:
-                camera.position.z -= 20;
-                break;
-            case 2:
-                camera.position.z += 20;
-                break;
-            default:
-                break;
-        }
-    }
+
+
+    // ------------------------------------------------------------------------- FONCTIONS génériques
+    
 
     function generateAstre(data) {
         const texture = new THREE.TextureLoader().load(data.assets.map);
         const textureNormal = new THREE.TextureLoader().load(data.assets.normalMap);
 
+        // to do construire l'objet de manière dynamique
         const materialData = {
             map: texture,
             // normalMap: textureNormal,
@@ -82,12 +70,14 @@
         }
 
         const geometry = new THREE.SphereGeometry(data.size.radius, 32, 32);
-        const material = new THREE.MeshBasicMaterial(materialData);
+        const material = data.id === "soleil" ? new THREE.MeshPhongMaterial(materialData) : new THREE.MeshBasicMaterial(materialData);
+        // const material = new THREE.MeshBasicMaterial(materialData);
         const sphere = new THREE.Mesh(geometry, material);
 
         material.needsUpdate = true;
         sphere.position.x = data.position.x;
         sphere.position.y = data.position.y;
+        sphere.rotation.x = Math.PI / 2;
         return sphere;
     }
 
@@ -100,19 +90,21 @@
             data.ellipse.aRotation, // aRotation
         );
 
-        const points = curve.getPoints( 50 );
+        const points = curve.getPoints( 100 );
         const geometry = new THREE.BufferGeometry().setFromPoints( points );
 
         const material = new THREE.LineBasicMaterial( { color : 0x141414 } );
 
         // Create the final object to add to the scene
         const ellipse = new THREE.Line( geometry, material );
+
         return { ellipse, curve }
     }
 
-    // ------------------------------------------------------------------------- texture SOLEIL
+    // ------------------------------------------------------------------------- Paramétrage SOLEIL
 
     const data_soleil = {
+        id: "soleil",
         assets: {
             map: 'images/sun_color.jpg',
         },
@@ -127,12 +119,13 @@
     const soleil = generateAstre(data_soleil);
     scene.add(soleil);
 
-    // ------------------------------------------------------------------------- texture MERCURE
+    // ------------------------------------------------------------------------- Paramétrage MERCURE
 
     const data_mercure = {
+        id: "mercure",
         assets: {
-            map: 'images/moon_color.jpg',
-            normalMap : 'images/moon_normal.jpg'
+            map: 'images/planetes/mercure/mercurymap.jpg',
+            normalMap : 'images/planetes/mercure/mercurybump.jpg'
         },
         position: {
             x: -10,
@@ -157,11 +150,12 @@
     scene.add(ellipse_mercure);
     group.add(mercure);
 
-    // --------------------------------------------------------------------------- texture VENUS
+    // --------------------------------------------------------------------------- Paramétrage VENUS
     const data_venus = {
+        id: "venus",
         assets: {
-            map: 'images/moon_color.jpg',
-            normalMap : 'images/moon_normal.jpg'
+            map: 'images/planetes/venus/venusmap.jpg',
+            normalMap : 'images/planetes/venus/venusbump.jpg'
         },
         position: {
             x: -20,
@@ -182,12 +176,13 @@
         }
     }
     const venus = generateAstre(data_venus);
-    const {ellipse: ellipse_venus, curve: curve_venus} = generateEllipse(data_venus);
+    const { ellipse: ellipse_venus, curve: curve_venus } = generateEllipse(data_venus);
     scene.add(ellipse_venus);
     group.add(venus);
 
-    // --------------------------------------------------------------------------- texture TERRE
+    // --------------------------------------------------------------------------- Paramétrage TERRE
         const data_terre = {
+        id: "terre",
         assets: {
             map: 'images/earth_color.jpg',
             normalMap : 'images/earth_normal.jpg'
@@ -215,11 +210,12 @@
     scene.add(ellipse_terre);
     group.add(terre);
 
-    // --------------------------------------------------------------------------- texture MARS
+    // --------------------------------------------------------------------------- Paramétrage MARS
     const data_mars = {
+        id: "mars",
         assets: {
-            map: 'images/moon_color.jpg',
-            normalMap : 'images/moon_normal.jpg'
+            map: 'images/planetes/mars/marsmap1k.jpg',
+            normalMap : 'images/planetes/mars/marsbump1k.jpg'
         },
         position: {
             x: 0,
@@ -244,11 +240,12 @@
     scene.add(ellipse_mars);
     group.add(mars);
 
-    // --------------------------------------------------------------------------- texture JUPITER
+    // --------------------------------------------------------------------------- Paramétrage JUPITER
     const data_jupiter = {
+        id: "jupiter",
         assets: {
-            map: 'images/moon_color.jpg',
-            normalMap : 'images/moon_normal.jpg'
+            map: 'images/planetes/jupiter/jupitermap.jpg',
+            // normalMap : 'images/planetes/jupiter/jupiterbump.jpg'
         },
         position: {
             x: 0,
@@ -273,11 +270,12 @@
     scene.add(ellipse_jupiter);
     group.add(jupiter);
 
-    // --------------------------------------------------------------------------- texture SATURNE
+    // --------------------------------------------------------------------------- Paramétrage SATURNE
         const data_saturne = {
+        id: "saturne",
         assets: {
-            map: 'images/moon_color.jpg',
-            normalMap : 'images/moon_normal.jpg'
+            map: 'images/planetes/saturne/saturnmap.jpg',
+            // normalMap : 'images/planetes/saturne/saturnbump.jpg'
         },
         position: {
             x: 0,
@@ -302,11 +300,12 @@
     scene.add(ellipse_saturne);
     group.add(saturne);
 
-    // --------------------------------------------------------------------------- texture URANUS
+    // --------------------------------------------------------------------------- Paramétrage URANUS
     const data_uranus = {
+        id: "uranus",
         assets: {
-            map: 'images/moon_color.jpg',
-            normalMap : 'images/moon_normal.jpg'
+            map: 'images/planetes/uranus/uranusmap.jpg',
+            // normalMap : 'images/planetes/uranus/uranusbump.jpg'
         },
         position: {
             x: 0,
@@ -331,11 +330,12 @@
     scene.add(ellipse_uranus);
     group.add(uranus);
 
-    // --------------------------------------------------------------------------- texture NEPTUNE
+    // --------------------------------------------------------------------------- Paramétrage NEPTUNE
     const data_neptune = {
+        id: "neptune",
         assets: {
-            map: 'images/moon_color.jpg',
-            normalMap : 'images/moon_normal.jpg'
+            map: 'images/planetes/neptune/neptunemap.jpg',
+            // normalMap : 'images/planetes/neptune/neptunebump.jpg'
         },
         position: {
             x: 0,
@@ -360,11 +360,12 @@
     scene.add(ellipse_neptune);
     group.add(neptune);
 
-    // --------------------------------------------------------------------------- texture PLUTON
+    // --------------------------------------------------------------------------- Paramétrage PLUTON
     const data_pluton = {
+        id: "pluton",
         assets: {
-            map: 'images/sun_color.jpg',
-            normalMap : 'images/moon_normal.jpg'
+            map: 'images/planetes/pluton/plutomap1k.jpg',
+            normalMap : 'images/planetes/pluton/plutobump1k.jpg'
         },
         position: {
             x: 70,
@@ -384,12 +385,19 @@
             aRotation: 0,
         }
     }
+
     const pluton = generateAstre(data_pluton);
     const {ellipse: ellipse_pluton, curve: curve_pluton} = generateEllipse(data_pluton);
     scene.add(ellipse_pluton);
     group.add(pluton);
 
-    camera.position.z = 500;
+    // camera.position.z = 10;
+    camera.position.set( 0, 0, 500 );
+    var controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.minDistance = -50;
+    //controls.maxDistance = 200;
+
+    document.body.addEventListener('wheel', () => event.deltaY > 0 ?  controls.minDistance += 20 : controls.minDistance -= 20);
 
     const vitesse = 10.618;
 
@@ -410,11 +418,14 @@
         curve_neptune.getPoint((delai * vitesse * .0000019) % 1, neptune.position);
         curve_pluton.getPoint((delai * vitesse *  .0000009) % 1, pluton.position);
 
-        // soleil.rotateY(Math.sqrt(0.000001));
+        soleil.rotateY(0.01);
+        terre.rotateY(0.001);
+        jupiter.rotateY(0.001);
+        controls.update();
         // terre.rotateZ(.001);
         // moon.rotateY(-0.00000001);
         // sphere3.rotateY(Math.sqrt(0.00000001));
-        group.rotateZ(0.002);
+        // group.rotateZ(0.002);
 
         requestAnimationFrame(animate);
         renderer.render(scene, camera);
