@@ -5,3 +5,17 @@ html {
 body {
     margin: 0px;
 }
+
+
+#btnZoom {
+    position: absolute;
+}
+
+.zoom {
+    border :1px solid white;
+    background: black;
+    color: whitesmoke;
+    padding: 10px;
+    width: 50px;
+
+}

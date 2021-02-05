@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset=utf-8>
+    <title>three.js app</title>
+    <style>
+      body {
+        margin: 0;
+        overflow: hidden;
+      }
+    </style>
+  </head>
+  <body>
+    <script src="https://threejs.org/build/three.min.js"></script>
+    <script>
+      // création du renderer
+      var renderer = new THREE.WebGLRenderer();
+      document.body.appendChild(renderer.domElement);
+      renderer.setSize(window.innerWidth, window.innerHeight);
+
+      // création de la caméra
+      var camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.5, 1000);
+
+      // création de la scène
+      var scene = new THREE.Scene();
+
+      // couleur de fond noire
+      scene.background = new THREE.Color(0, 0, 0);
+
+      // création d'un courbe de Bézier à partir d'un point de départ,
+      // de deux points de contrôle et d'un point d'arrivée.
+      var curve = new THREE.CubicBezierCurve3(
+        new THREE.Vector3(-10,  0, 3),
+        new THREE.Vector3( -5, 15, 2),
+        new THREE.Vector3( 20, 15, 1),
+        new THREE.Vector3( 10,  0, 0)
+      );
+
+      var points = curve.getPoints(40);
+      var geometry = new THREE.BufferGeometry().setFromPoints(points);
+      var material = new THREE.LineBasicMaterial();
+      var curveObject = new THREE.Line(geometry, material);
+      scene.add(curveObject);
+
+      var sphere = new THREE.Mesh(new THREE.SphereGeometry());
+      scene.add(sphere);
+
+      camera.position.z = 30;
+      camera.position.y = 5
+
+      var vitesse = 5;
+
+      var start = null;
+      function animate(t) {
+        if (start == null) {
+          start = t;
+        }
+        var delai = t - start;
+
+        curve.getPoint((delai * vitesse * .00000001) % 1, sphere.position);
+
+        requestAnimationFrame(animate);
+        renderer.render(scene, camera);
+      }
+      requestAnimationFrame(animate);
+
+    </script>
+  </body>
+</html>
