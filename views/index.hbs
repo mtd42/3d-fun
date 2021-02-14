@@ -134,6 +134,13 @@
         return controls;
     }
 
+    function updateViewportSize() {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix()
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        window.addEventListener("resize", updateViewportSize);
+    }
+
     // ------------------------------------------------------------------------- Paramétrage SOLEIL
 
     const data_soleil = {
@@ -422,8 +429,9 @@
     // --------------------------------------------------------------------------- Paramétrage GENERAL
     initModal(renderer);
     zoom(document);
-    const controls = initCameraAndControl(camera, renderer);
+    updateViewportSize(window);
 
+    const controls = initCameraAndControl(camera, renderer);
     const vitesse = 10.618;
     let start = null;
     const animate = (t) => {
