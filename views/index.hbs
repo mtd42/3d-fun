@@ -1,3 +1,10 @@
+<div id="myModal" class="modal">
+  <div class="modal-content">
+    <span class="close">&times;</span>
+    <p id="prop"></p>
+  </div>
+</div>
+
 <script src="https://threejs.org/build/three.min.js"></script>
 <script src="/javascripts/OrbitControls.js"></script>
 <script>
@@ -24,23 +31,12 @@
     const group = new THREE.Group();
     scene.add(group);
 
-    // --------------------------------------------------------------------------- Paramétrage Audio
-    // test audio
-    // const listener = new THREE.AudioListener();
-    // camera.add( listener );
-// 
-    // // create a global audio source
-    // const sound = new THREE.Audio( listener );
-// 
-    // // load a sound and set it as the Audio object's buffer
-    // const audioLoader = new THREE.AudioLoader();
-    // audioLoader.load( 'images/audio.mp3', function( buffer ) {
-    //     sound.setBuffer( buffer );
-    //     sound.setLoop( true );
-    //     sound.setVolume( 0.5 );
-    //     sound.play();
-    // });
+    // Création du groupe selectionnables
+    const selectionables = new THREE.Group();
+    scene.add(selectionables);
 
+    // Initialisation raycasting
+    const raycaster = new THREE.Raycaster();
 
     // --------------------------------------------------------------------------- Paramétrage Lumière
     const light = new THREE.DirectionalLight( 0xaaafff, 2.5, 100 );
@@ -53,31 +49,24 @@
     light.shadow.camera.near = 0.5;
     light.shadow.camera.far = 500;
 
-
-
     // ------------------------------------------------------------------------- FONCTIONS génériques
-    
-
     function generateAstre(data) {
         const texture = new THREE.TextureLoader().load(data.assets.map);
         const textureNormal = new THREE.TextureLoader().load(data.assets.normalMap);
 
-        // to do construire l'objet de manière dynamique
         const materialData = {
             map: texture,
-            // normalMap: textureNormal,
-            // bumpMap: '',
         }
 
         const geometry = new THREE.SphereGeometry(data.size.radius, 32, 32);
         const material = data.id === "soleil" ? new THREE.MeshPhongMaterial(materialData) : new THREE.MeshBasicMaterial(materialData);
-        // const material = new THREE.MeshBasicMaterial(materialData);
         const sphere = new THREE.Mesh(geometry, material);
 
         material.needsUpdate = true;
         sphere.position.x = data.position.x;
         sphere.position.y = data.position.y;
         sphere.rotation.x = Math.PI / 2;
+        sphere.name = data.id;
         return sphere;
     }
 
@@ -95,10 +84,54 @@
 
         const material = new THREE.LineBasicMaterial( { color : 0x141414 } );
 
-        // Create the final object to add to the scene
         const ellipse = new THREE.Line( geometry, material );
 
         return { ellipse, curve }
+    }
+
+    function getSelectionneLePlusProche(position) {
+        raycaster.setFromCamera(position, camera);
+        const [ { object } ] = raycaster.intersectObjects(selectionables.children);
+        return object ? object : {};
+    }
+
+    function onMouseClick(event) {
+        const position = new THREE.Vector2();
+
+        const domRect = renderer.domElement.getBoundingClientRect();
+        position.x = ((event.clientX - domRect.left) / domRect.width) * 2 - 1;
+        position.y = - ((event.clientY - domRect.top) / domRect.height) * 2 + 1;
+
+        const closestObject = getSelectionneLePlusProche(position);
+        if (closestObject) {
+          console.log("Vous avez sélectionné l'objet " + closestObject.name);
+          const modal = document.getElementById("myModal");
+          const prop = document.getElementById("prop");
+          modal.style.display = "block";
+          prop.innerHTML = closestObject.name;
+        } else {
+          console.log("Vous n'avez rien sélectionné");
+        };
+    }
+
+    function initModal(renderer) {
+        const modal = document.getElementById("myModal");
+        const [span] = document.getElementsByClassName("close");
+        span.onclick = function() {
+            modal.style.display = "none";
+        }
+        renderer.domElement.addEventListener('click', onMouseClick);
+    }
+
+    function zoom(document) {
+          document.body.addEventListener('wheel', () => event.deltaY > 0 ?  controls.minDistance += 20 : controls.minDistance -= 20);
+    }
+
+    function initCameraAndControl(camera, renderer) {
+        camera.position.set( 0, 0, 500 );
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.minDistance = -50;
+        return controls;
     }
 
     // ------------------------------------------------------------------------- Paramétrage SOLEIL
@@ -117,7 +150,7 @@
         }
     }
     const soleil = generateAstre(data_soleil);
-    scene.add(soleil);
+    selectionables.add(soleil);
 
     // ------------------------------------------------------------------------- Paramétrage MERCURE
 
@@ -146,9 +179,9 @@
         }
     }
     const mercure = generateAstre(data_mercure);
-    const {ellipse: ellipse_mercure, curve: curve_mercure} = generateEllipse(data_mercure);
+    const { ellipse: ellipse_mercure, curve: curve_mercure } = generateEllipse(data_mercure);
+    selectionables.add(mercure);
     scene.add(ellipse_mercure);
-    group.add(mercure);
 
     // --------------------------------------------------------------------------- Paramétrage VENUS
     const data_venus = {
@@ -177,8 +210,8 @@
     }
     const venus = generateAstre(data_venus);
     const { ellipse: ellipse_venus, curve: curve_venus } = generateEllipse(data_venus);
+    selectionables.add(venus);
     scene.add(ellipse_venus);
-    group.add(venus);
 
     // --------------------------------------------------------------------------- Paramétrage TERRE
         const data_terre = {
@@ -206,9 +239,9 @@
         }
     }
     const terre = generateAstre(data_terre);
-    const {ellipse: ellipse_terre, curve: curve_terre} = generateEllipse(data_terre);
+    const { ellipse: ellipse_terre, curve: curve_terre } = generateEllipse(data_terre);
+    selectionables.add(terre);
     scene.add(ellipse_terre);
-    group.add(terre);
 
     // --------------------------------------------------------------------------- Paramétrage MARS
     const data_mars = {
@@ -237,15 +270,14 @@
     }
     const mars = generateAstre(data_mars);
     const {ellipse: ellipse_mars, curve: curve_mars} = generateEllipse(data_mars);
+    selectionables.add(mars);
     scene.add(ellipse_mars);
-    group.add(mars);
 
     // --------------------------------------------------------------------------- Paramétrage JUPITER
     const data_jupiter = {
         id: "jupiter",
         assets: {
             map: 'images/planetes/jupiter/jupitermap.jpg',
-            // normalMap : 'images/planetes/jupiter/jupiterbump.jpg'
         },
         position: {
             x: 0,
@@ -267,15 +299,14 @@
     }
     const jupiter = generateAstre(data_jupiter);
     const {ellipse: ellipse_jupiter, curve: curve_jupiter} = generateEllipse(data_jupiter);
+    selectionables.add(jupiter);
     scene.add(ellipse_jupiter);
-    group.add(jupiter);
 
     // --------------------------------------------------------------------------- Paramétrage SATURNE
         const data_saturne = {
         id: "saturne",
         assets: {
             map: 'images/planetes/saturne/saturnmap.jpg',
-            // normalMap : 'images/planetes/saturne/saturnbump.jpg'
         },
         position: {
             x: 0,
@@ -296,16 +327,15 @@
         }
     }
     const saturne = generateAstre(data_saturne);
-    const {ellipse: ellipse_saturne, curve: curve_saturne} = generateEllipse(data_saturne);
+    const { ellipse: ellipse_saturne, curve: curve_saturne } = generateEllipse(data_saturne);
+    selectionables.add(saturne);
     scene.add(ellipse_saturne);
-    group.add(saturne);
 
     // --------------------------------------------------------------------------- Paramétrage URANUS
     const data_uranus = {
         id: "uranus",
         assets: {
             map: 'images/planetes/uranus/uranusmap.jpg',
-            // normalMap : 'images/planetes/uranus/uranusbump.jpg'
         },
         position: {
             x: 0,
@@ -327,15 +357,14 @@
     }
     const uranus = generateAstre(data_uranus);
     const {ellipse: ellipse_uranus, curve: curve_uranus} = generateEllipse(data_uranus);
+    selectionables.add(uranus);
     scene.add(ellipse_uranus);
-    group.add(uranus);
 
     // --------------------------------------------------------------------------- Paramétrage NEPTUNE
     const data_neptune = {
         id: "neptune",
         assets: {
             map: 'images/planetes/neptune/neptunemap.jpg',
-            // normalMap : 'images/planetes/neptune/neptunebump.jpg'
         },
         position: {
             x: 0,
@@ -356,9 +385,9 @@
         }
     }
     const neptune = generateAstre(data_neptune);
-    const {ellipse: ellipse_neptune, curve: curve_neptune} = generateEllipse(data_neptune);
+    const { ellipse: ellipse_neptune, curve: curve_neptune } = generateEllipse(data_neptune);
+    selectionables.add(neptune);
     scene.add(ellipse_neptune);
-    group.add(neptune);
 
     // --------------------------------------------------------------------------- Paramétrage PLUTON
     const data_pluton = {
@@ -385,22 +414,17 @@
             aRotation: 0,
         }
     }
-
     const pluton = generateAstre(data_pluton);
     const {ellipse: ellipse_pluton, curve: curve_pluton} = generateEllipse(data_pluton);
+    selectionables.add(pluton);
     scene.add(ellipse_pluton);
-    group.add(pluton);
 
-    // camera.position.z = 10;
-    camera.position.set( 0, 0, 500 );
-    var controls = new THREE.OrbitControls(camera, renderer.domElement);
-    controls.minDistance = -50;
-    //controls.maxDistance = 200;
-
-    document.body.addEventListener('wheel', () => event.deltaY > 0 ?  controls.minDistance += 20 : controls.minDistance -= 20);
+    // --------------------------------------------------------------------------- Paramétrage GENERAL
+    initModal(renderer);
+    zoom(document);
+    const controls = initCameraAndControl(camera, renderer);
 
     const vitesse = 10.618;
-
     let start = null;
     const animate = (t) => {
         if (start === null) {
@@ -422,10 +446,6 @@
         terre.rotateY(0.001);
         jupiter.rotateY(0.001);
         controls.update();
-        // terre.rotateZ(.001);
-        // moon.rotateY(-0.00000001);
-        // sphere3.rotateY(Math.sqrt(0.00000001));
-        // group.rotateZ(0.002);
 
         requestAnimationFrame(animate);
         renderer.render(scene, camera);
