@@ -18,6 +18,3 @@ npm start
 - Mouvements des astres
 - Ellipses
 - Canvas responsive
-
-### Live Demo
-> https://dev.mtd42.fr
